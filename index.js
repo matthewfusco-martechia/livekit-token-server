@@ -14,7 +14,7 @@ const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.clou
 console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
-app.post('/get-token', (req, res) => {
+app.post('/get-token', async (req, res) => {  // ⬅️ Make this function `async`
   try {
     const { userName, roomName } = req.body;
 
@@ -37,13 +37,12 @@ app.post('/get-token', (req, res) => {
       canSubscribe: true,
     });
 
-    // Generate JWT token
-    const token = at.toJwt();
+    // 🔥 Fix: Await `toJwt()` since it returns a Promise
+    const token = await at.toJwt();
 
-    // Debug: Print the token before returning it
     console.log("✅ Generated Token:", token);
 
-    if (!token || token === "{}") {
+    if (!token) {
       console.error("❌ Token generation failed - Empty token");
       return res.status(500).json({ error: "Failed to generate token" });
     }
