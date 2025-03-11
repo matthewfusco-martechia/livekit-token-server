@@ -28,7 +28,7 @@ app.post('/get-token', async (req, res) => {
 
     console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
 
-    // Create a new AccessToken
+    // Create a new access token
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: userName });
     at.addGrant({
       roomJoin: true,
@@ -37,8 +37,8 @@ app.post('/get-token', async (req, res) => {
       canSubscribe: true,
     });
 
-    // Remove await since toJwt() returns synchronously in your version
-    const token = at.toJwt();
+    // Await the token generation so we get a resolved string
+    const token = await at.toJwt();
     console.log("✅ Generated Token:", token);
 
     if (!token) {
