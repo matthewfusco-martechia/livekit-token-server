@@ -9,14 +9,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.21.2",
-    "fs-extra": "^11.1.1",
     "livekit-client": "^1.4.1",
     "livekit-server-sdk": "^2.10.2",
-    "@livekit/agent-tools": "^0.1.0",
-    "@livekit/transcription": "^0.1.0",
-    "@livekit/tts": "^0.1.0",
-    "@livekit/voice-processor": "^0.1.0",
-    "node:stream": "0.0.2",
     "uuid": "^9.0.0"
   }
 }
