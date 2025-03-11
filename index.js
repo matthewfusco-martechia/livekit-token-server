@@ -1,23 +1,29 @@
 const express = require('express');
 const cors = require('cors');
-const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
+const { AccessToken } = require('livekit-server-sdk');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Replace with your actual environment variables
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
+
+// Debug: Print API keys (Make sure these are not empty)
+console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
+console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
 app.post('/get-token', (req, res) => {
   try {
     const { userName, roomName } = req.body;
 
     if (!userName || !roomName) {
+      console.error("❌ Missing parameters:", req.body);
       return res.status(400).json({ error: "userName and roomName are required" });
     }
+
+    console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
 
     // Create a new access token
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
@@ -31,20 +37,23 @@ app.post('/get-token', (req, res) => {
       canSubscribe: true,
     });
 
-    // Generate JWT
+    // Generate JWT token
     const token = at.toJwt();
 
-    res.json({
-      token, // ✅ Now this should return a valid token
-      url: LIVEKIT_URL,
-    });
+    if (!token) {
+      console.error("❌ Token generation failed - Empty token");
+      return res.status(500).json({ error: "Failed to generate token" });
+    }
+
+    console.log("✅ Token successfully generated:", token);
+
+    res.json({ token, url: LIVEKIT_URL });
   } catch (error) {
-    console.error("Error generating token:", error);
-    res.status(500).json({ error: 'Error generating token' });
+    console.error("❌ Error generating token:", error);
+    res.status(500).json({ error: "Error generating token" });
   }
 });
 
-// A simple test route
 app.get('/', (req, res) => {
   res.send('LiveKit token server is running');
 });
