@@ -1,43 +1,31 @@
-// index.js
-
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { AccessToken } = require('livekit-server-sdk');
-const { startVoiceAgent } = require('./voice-agent'); // Ensure this file exists
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Environment variables (Make sure these are correctly set in DigitalOcean)
-const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
-const PORT = process.env.PORT || 3000;
+const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
-// 🔍 Debug: Print API keys (Do NOT do this in production)
+// Debug: Print API keys to ensure they exist
 console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
-/**
- * POST /get-token
- * Expects JSON: { "userName": "someUser", "roomName": "someRoom" }
- * Returns: { "token": "<jwt>", "url": LIVEKIT_URL }
- */
-app.post('/get-token', (req, res) => {
+app.post('/get-token', async (req, res) => {  // ⬅️ Make this function `async`
   try {
     const { userName, roomName } = req.body;
 
-    // Validate input
     if (!userName || !roomName) {
-      console.error("❌ Missing userName or roomName:", req.body);
+      console.error("❌ Missing parameters:", req.body);
       return res.status(400).json({ error: "userName and roomName are required" });
     }
 
     console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
 
-    // Create a new LiveKit AccessToken
+    // Create a new access token
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       identity: userName,
     });
@@ -49,35 +37,28 @@ app.post('/get-token', (req, res) => {
       canSubscribe: true,
     });
 
-    const token = at.toJwt();
-    console.log("✅ Token successfully generated");
+    // 🔥 Fix: Await `toJwt()` since it returns a Promise
+    const token = await at.toJwt();
 
-    res.json({
-      token,
-      url: LIVEKIT_URL,
-    });
+    console.log("✅ Generated Token:", token);
+
+    if (!token) {
+      console.error("❌ Token generation failed - Empty token");
+      return res.status(500).json({ error: "Failed to generate token" });
+    }
+
+    res.json({ token, url: LIVEKIT_URL });
   } catch (error) {
-    console.error("❌ Error in /get-token:", error);
+    console.error("❌ Error generating token:", error);
     res.status(500).json({ error: "Error generating token" });
   }
 });
 
-// Health-check route
 app.get('/', (req, res) => {
-  res.send('LiveKit token server + voice agent is running!');
+  res.send('LiveKit token server is running');
 });
 
-// Start the Express server
-app.listen(PORT, () => {
-  console.log(`🚀 Token server listening on port ${PORT}`);
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
-
-// 🚀 Start the Voice Agent (joins "defaultRoom" by default)
-(async () => {
-  try {
-    await startVoiceAgent('defaultRoom');
-    console.log("✅ Voice agent started successfully");
-  } catch (error) {
-    console.error("❌ Error starting voice agent:", error);
-  }
-})();
