@@ -5,22 +5,25 @@ const axios = require('axios');
 const { connect } = require('livekit-client');
 const { v4: uuidv4 } = require('uuid');
 
-// TOKEN_SERVER_URL should be your public DigitalOcean URL,
-// for example: "https://sea-turtle-app-riq58.ondigitalocean.app"
-const TOKEN_SERVER_URL = process.env.TOKEN_SERVER_URL; 
-const LIVEKIT_URL = process.env.LIVEKIT_URL;
+// TOKEN_SERVER_URL should be set in your environment (e.g. without a trailing slash)
+// For example: "https://sea-turtle-app-riq58.ondigitalocean.app"
+const TOKEN_SERVER_URL = process.env.TOKEN_SERVER_URL || 'http://localhost:3000';
+const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
 /**
  * Fetch a token for the given room and user by calling our token endpoint.
+ * This version removes any trailing slashes from TOKEN_SERVER_URL.
  */
 async function getToken(roomName, userName) {
-  const response = await axios.post(`${TOKEN_SERVER_URL}/get-token`, { userName, roomName });
+  // Remove any trailing slashes from TOKEN_SERVER_URL
+  const tokenServerUrl = TOKEN_SERVER_URL.replace(/\/+$/, "");
+  const response = await axios.post(`${tokenServerUrl}/get-token`, { userName, roomName });
   return response.data.token;
 }
 
 /**
  * startVoiceAgent:
- *  - Generates a unique identity for the agent.
+ *  - Generates a unique identity for the voice agent.
  *  - Fetches a token.
  *  - Connects to the LiveKit room.
  *  - Logs when an audio track is subscribed.
@@ -34,8 +37,7 @@ async function startVoiceAgent(roomName) {
   room.on('trackSubscribed', (track, publication, participant) => {
     if (track.kind === 'audio') {
       console.log(`Voice agent subscribed to audio track from ${participant.identity}`);
-      // Here you could extend the logic to process audio:
-      // For example, send audio to STT (Deepgram), then chat with GPT, then output TTS.
+      // Extend here to add processing (STT, GPT, TTS) if desired.
     }
   });
 }
