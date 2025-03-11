@@ -3,7 +3,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import axios from 'axios';
-import { connect, Room } from 'livekit-client';  // ✅ Correct Import
+import LiveKitClient from 'livekit-client';  // ✅ Import the default export
 import { v4 as uuidv4 } from 'uuid';
 
 const TOKEN_SERVER_URL = process.env.TOKEN_SERVER_URL || 'http://localhost:3000';
@@ -34,7 +34,7 @@ export async function startVoiceAgent(roomName) {
     console.log(`🔑 Retrieved Token for Agent: ${token}`);
 
     // Create a LiveKit room instance
-    const room = new Room();  // ✅ Correct usage
+    const room = new LiveKitClient.Room();  // ✅ Correct usage
     await room.connect(LIVEKIT_URL, token);  // ✅ Corrected function call
     console.log(`✅ Voice agent joined room "${roomName}" as "${agentIdentity}"`);
 
