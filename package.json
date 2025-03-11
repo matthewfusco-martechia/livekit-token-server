@@ -6,6 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@livekit/agents": "^0.7.0",
     "axios": "^1.3.4",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
