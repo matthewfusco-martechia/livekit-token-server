@@ -1,70 +1,43 @@
-// index.js
+// voice-agent.js
 
 import dotenv from 'dotenv';
 dotenv.config();
-import express from 'express';
-import cors from 'cors';
-import { AccessToken } from 'livekit-server-sdk';
-import { startVoiceAgent } from './voice-agent.js';
+import axios from 'axios';
+import { connect } from 'livekit-client';
+import { v4 as uuidv4 } from 'uuid';
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
-const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
+// TOKEN_SERVER_URL should be set without a trailing slash.
+// For example: "https://sea-turtle-app-riq58.ondigitalocean.app"
+const TOKEN_SERVER_URL = process.env.TOKEN_SERVER_URL || 'http://localhost:3000';
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
-// Debug: Log that API keys are loaded
-console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
-console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
+/**
+ * Fetch a token for the given room and user by calling our token endpoint.
+ */
+async function getToken(roomName, userName) {
+  // Remove any trailing slashes from TOKEN_SERVER_URL
+  const tokenServerUrl = TOKEN_SERVER_URL.replace(/\/+$/, "");
+  const response = await axios.post(`${tokenServerUrl}/get-token`, { userName, roomName });
+  return response.data.token;
+}
 
-app.post('/get-token', async (req, res) => {
-  try {
-    const { userName, roomName } = req.body;
-    if (!userName || !roomName) {
-      console.error("❌ Missing parameters:", req.body);
-      return res.status(400).json({ error: "userName and roomName are required" });
+/**
+ * startVoiceAgent:
+ *  - Generates a unique identity for the voice agent.
+ *  - Fetches a token.
+ *  - Connects to the LiveKit room.
+ *  - Logs when an audio track is subscribed.
+ */
+export async function startVoiceAgent(roomName) {
+  const agentIdentity = 'voiceAgentBot-' + uuidv4().slice(0, 8);
+  const token = await getToken(roomName, agentIdentity);
+  const room = await connect(LIVEKIT_URL, token);
+  console.log(`Voice agent joined room "${roomName}" as "${agentIdentity}"`);
+
+  room.on('trackSubscribed', (track, publication, participant) => {
+    if (track.kind === 'audio') {
+      console.log(`Voice agent subscribed to audio track from ${participant.identity}`);
+      // Extend here for audio processing (e.g., STT → GPT → TTS) if desired.
     }
-
-    console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
-
-    // Create a new access token
-    const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: userName });
-    at.addGrant({
-      roomJoin: true,
-      room: roomName,
-      canPublish: true,
-      canSubscribe: true,
-    });
-
-    // Await token generation (toJwt returns a Promise)
-    const token = await at.toJwt();
-    console.log("✅ Generated Token:", token);
-
-    if (!token) {
-      console.error("❌ Token generation failed - Empty token");
-      return res.status(500).json({ error: "Failed to generate token" });
-    }
-
-    res.json({ token, url: LIVEKIT_URL });
-  } catch (error) {
-    console.error("❌ Error generating token:", error);
-    res.status(500).json({ error: "Error generating token" });
-  }
-});
-
-// Simple health-check route
-app.get('/', (req, res) => {
-  res.send('LiveKit token server is running');
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
-
-// Launch the voice agent for room "defaultRoom"
-startVoiceAgent('defaultRoom')
-  .then(() => console.log('Voice agent started.'))
-  .catch(err => console.error('Error starting voice agent:', err));
+  });
+}
