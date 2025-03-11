@@ -2,15 +2,15 @@
 
 require('dotenv').config();
 const axios = require('axios');
-// Use a workaround to correctly retrieve the "connect" function from livekit-client:
-const livekitClientModule = require('livekit-client');
-const connect = livekitClientModule.connect || (livekitClientModule.default && livekitClientModule.default.connect);
-if (!connect) {
+// Import the default export from livekit-client to access the connect function.
+const LiveKitClient = require('livekit-client').default;
+if (!LiveKitClient || typeof LiveKitClient.connect !== "function") {
   throw new Error("connect function not found in livekit-client module");
 }
+const connect = LiveKitClient.connect;
 const { v4: uuidv4 } = require('uuid');
 
-// TOKEN_SERVER_URL should be set in your environment (ensure no trailing slash)
+// TOKEN_SERVER_URL should be set in your environment without a trailing slash
 // For example: "https://sea-turtle-app-riq58.ondigitalocean.app"
 const TOKEN_SERVER_URL = process.env.TOKEN_SERVER_URL || 'http://localhost:3000';
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
@@ -41,7 +41,7 @@ async function startVoiceAgent(roomName) {
   room.on('trackSubscribed', (track, publication, participant) => {
     if (track.kind === 'audio') {
       console.log(`Voice agent subscribed to audio track from ${participant.identity}`);
-      // Extend this section to add audio processing (STT → GPT → TTS) if desired.
+      // Extend here for audio processing (STT → GPT → TTS) if desired.
     }
   });
 }
