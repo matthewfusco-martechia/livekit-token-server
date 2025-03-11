@@ -1,11 +1,10 @@
-// index.js
+// index.js (CommonJS)
 
-import dotenv from 'dotenv';
-dotenv.config();
-import express from 'express';
-import cors from 'cors';
-import { AccessToken } from 'livekit-server-sdk';
-import { startVoiceAgent } from './voice-agent.js';
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { AccessToken } = require('livekit-server-sdk');
+const { startVoiceAgent } = require('./voice-agent'); // note no .js extension needed
 
 const app = express();
 app.use(cors());
@@ -15,13 +14,13 @@ const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
-// Debug: Log that API keys are loaded
 console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
 app.post('/get-token', async (req, res) => {
   try {
     const { userName, roomName } = req.body;
+
     if (!userName || !roomName) {
       console.error("❌ Missing parameters:", req.body);
       return res.status(400).json({ error: "userName and roomName are required" });
@@ -29,7 +28,6 @@ app.post('/get-token', async (req, res) => {
 
     console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
 
-    // Create a new access token
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: userName });
     at.addGrant({
       roomJoin: true,
@@ -38,7 +36,7 @@ app.post('/get-token', async (req, res) => {
       canSubscribe: true,
     });
 
-    // Await token generation (toJwt returns a Promise)
+    // Wait for the token
     const token = await at.toJwt();
     console.log("✅ Generated Token:", token);
 
@@ -54,7 +52,7 @@ app.post('/get-token', async (req, res) => {
   }
 });
 
-// Simple health-check route
+// Simple route
 app.get('/', (req, res) => {
   res.send('LiveKit token server is running');
 });
@@ -64,7 +62,7 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 
-// Launch the voice agent for room "defaultRoom"
+// Start voice agent
 startVoiceAgent('defaultRoom')
   .then(() => console.log('Voice agent started.'))
   .catch(err => console.error('Error starting voice agent:', err));
