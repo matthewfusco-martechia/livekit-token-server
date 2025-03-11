@@ -14,11 +14,11 @@ const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
-// Debug: Ensure API keys are loaded
+// Debug: Log that API keys are loaded
 console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
-app.post('/get-token', (req, res) => {
+app.post('/get-token', async (req, res) => {
   try {
     const { userName, roomName } = req.body;
     if (!userName || !roomName) {
@@ -28,7 +28,7 @@ app.post('/get-token', (req, res) => {
 
     console.log(`🔹 Generating token for user: ${userName} in room: ${roomName}`);
 
-    // Create a new access token
+    // Create a new AccessToken
     const at = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, { identity: userName });
     at.addGrant({
       roomJoin: true,
@@ -37,7 +37,7 @@ app.post('/get-token', (req, res) => {
       canSubscribe: true,
     });
 
-    // Call toJwt() synchronously so it returns a string
+    // Remove await since toJwt() returns synchronously in your version
     const token = at.toJwt();
     console.log("✅ Generated Token:", token);
 
