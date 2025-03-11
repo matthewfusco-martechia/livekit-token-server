@@ -1,10 +1,11 @@
-// index.js (CommonJS)
+// index.js
 
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { AccessToken } = require('livekit-server-sdk');
-const { startVoiceAgent } = require('./voice-agent'); // note no .js extension needed
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import cors from 'cors';
+import { AccessToken } from 'livekit-server-sdk';
+import { startVoiceAgent } from './voice-agent.js';
 
 const app = express();
 app.use(cors());
@@ -20,7 +21,6 @@ console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISS
 app.post('/get-token', async (req, res) => {
   try {
     const { userName, roomName } = req.body;
-
     if (!userName || !roomName) {
       console.error("❌ Missing parameters:", req.body);
       return res.status(400).json({ error: "userName and roomName are required" });
@@ -36,7 +36,6 @@ app.post('/get-token', async (req, res) => {
       canSubscribe: true,
     });
 
-    // Wait for the token
     const token = await at.toJwt();
     console.log("✅ Generated Token:", token);
 
@@ -52,7 +51,6 @@ app.post('/get-token', async (req, res) => {
   }
 });
 
-// Simple route
 app.get('/', (req, res) => {
   res.send('LiveKit token server is running');
 });
@@ -62,7 +60,6 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 
-// Start voice agent
 startVoiceAgent('defaultRoom')
   .then(() => console.log('Voice agent started.'))
   .catch(err => console.error('Error starting voice agent:', err));
