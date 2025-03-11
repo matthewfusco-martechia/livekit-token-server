@@ -10,7 +10,7 @@ const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY;
 const LIVEKIT_API_SECRET = process.env.LIVEKIT_API_SECRET;
 const LIVEKIT_URL = process.env.LIVEKIT_URL || 'wss://soar-uxc84hok.livekit.cloud';
 
-// Debug: Print API keys (Make sure these are not empty)
+// Debug: Print API keys to ensure they exist
 console.log("LIVEKIT_API_KEY:", LIVEKIT_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("LIVEKIT_API_SECRET:", LIVEKIT_API_SECRET ? "✅ Loaded" : "❌ MISSING");
 
@@ -40,12 +40,13 @@ app.post('/get-token', (req, res) => {
     // Generate JWT token
     const token = at.toJwt();
 
-    if (!token) {
+    // Debug: Print the token before returning it
+    console.log("✅ Generated Token:", token);
+
+    if (!token || token === "{}") {
       console.error("❌ Token generation failed - Empty token");
       return res.status(500).json({ error: "Failed to generate token" });
     }
-
-    console.log("✅ Token successfully generated:", token);
 
     res.json({ token, url: LIVEKIT_URL });
   } catch (error) {
